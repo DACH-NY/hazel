@@ -188,18 +188,13 @@ def hazel_custom_package_hackage(
     version: string, package version.
     sha256: string, SHA256 hash of archive.
   """
-  package_id = package_name + "-" + version
-  url = "https://hackage.haskell.org/package/{0}/{1}.tar.gz".format(
-    package_id,
-    package_id,
-  )
-  fixed_package_name = _fixup_package_name(package_name)
-  http_archive(
-    name = "haskell_{0}".format(fixed_package_name),
-    build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name),
-    sha256 = sha256,
-    strip_prefix = package_id,
-    urls = [url],
+  _cabal_haskell_repository(
+      name = "haskell_" + _fixup_package_name(package_name),
+      package_name = package_name,
+      package_version = version,
+      package_flags = {},
+      sha256 = sha256,
+      hazel_base_repo_name = "hazel_base_repository",
   )
 
 def hazel_custom_package_github(
