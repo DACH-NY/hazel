@@ -126,7 +126,7 @@ def hazel_repositories(
 
   hazel_base_repository(
       name = hazel_base_repo_name,
-      ghc="{}//:bin/ghc".format(ghc_workspace),
+      ghc="{}//:bin/ghc.exe".format(ghc_workspace),
       extra_libs = extra_libs,
       extra_libs_hdrs = extra_libs_hdrs,
       extra_libs_strip_include_prefix = extra_libs_strip_include_prefix,
