@@ -35,5 +35,5 @@ def genalex(src, out):
       srcs=[src],
       outs=[out],
       tools=[hazel_binary("alex")],
-      cmd="$(location @{}) -g -o $(OUTS) $(SRCS)".format(hazel_binary("alex")),
+      cmd="$(location {}) -g -o $(OUTS) $(SRCS)".format(hazel_binary("alex")),
   )
