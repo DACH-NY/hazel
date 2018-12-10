@@ -29,8 +29,10 @@ load("//tools:mangling.bzl", "hazel_library")
 def _impl_path_module_gen(ctx):
   paths_file = ctx.new_file(ctx.label.name)
 
-  base_dir = ctx.label.package + (
-      ("/" + ctx.attr.data_dir) if ctx.attr.data_dir else "")
+  base_dir = paths.join(
+      ctx.label.package,
+      ctx.attr.data_dir if ctx.attr.data_dir else ""
+  )
 
   ctx.template_action(
       template=ctx.file._template,
