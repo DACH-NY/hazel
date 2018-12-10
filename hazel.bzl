@@ -177,8 +177,7 @@ def _hazel_cabal_package_url_impl(ctx):
     "package.bzl"
   )
 
-# XXX: This should be wrapped in a macro that performs the right Hazel name mangling.
-hazel_cabal_package_url = repository_rule(
+_hazel_cabal_package_url = repository_rule(
   implementation = _hazel_cabal_package_url_impl,
   attrs = {
     "url": attr.string(mandatory=True),
@@ -190,6 +189,24 @@ hazel_cabal_package_url = repository_rule(
     "hazel_base_repo_name": attr.string(default="hazel_base_repository"),
   },
 )
+
+def hazel_cabal_package_url(
+    package_name,
+    package_version,
+    url,
+    strip_prefix = "",
+    sha256 = "",
+    package_flags = {}):
+  """TODO"""
+  _hazel_cabal_package_url(
+    name = hazel_workspace(package_name),
+    package_name = package_name,
+    package_version = package_version,
+    url = url,
+    strip_prefix = strip_prefix,
+    sha256 = sha256,
+    package_flags = package_flags,
+  )
 
 def hazel_custom_package_hackage(
     package_name,
