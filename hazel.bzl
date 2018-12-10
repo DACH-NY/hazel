@@ -162,6 +162,35 @@ def hazel_repositories(
       name = "all_hazel_packages",
       files = ["@{}//:files".format(hazel_workspace(p)) for p in pkgs])
 
+def _hazel_cabal_package_url_impl(ctx):
+  ctx.download_and_extract(
+    url = ctx.attr.url,
+    stripPrefix = ctx.attr.strip_prefix,
+    sha256 = ctx.attr.sha256,
+    output = "",
+  )
+  symlink_and_invoke_hazel(
+    ctx,
+    ctx.attr.hazel_base_repo_name,
+    ctx.attr.package_flags,
+    ctx.attr.package_name + ".cabal",
+    "package.bzl"
+  )
+
+# XXX: This should be wrapped in a macro that performs the right Hazel name mangling.
+hazel_cabal_package_url = repository_rule(
+  implementation = _hazel_cabal_package_url_impl,
+  attrs = {
+    "url": attr.string(mandatory=True),
+    "strip_prefix": attr.string(default=""),
+    "sha256": attr.string(default=""),
+    "package_name": attr.string(mandatory=True),
+    "package_version": attr.string(mandatory=True),
+    "package_flags": attr.string_dict(default={}),
+    "hazel_base_repo_name": attr.string(default="hazel_base_repository"),
+  },
+)
+
 def hazel_custom_package_hackage(
     package_name,
     version,
