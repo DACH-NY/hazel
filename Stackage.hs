@@ -12,16 +12,17 @@ module Main (main) where
 
 import qualified Crypto.Hash.SHA256 as SHA256
 import Control.Monad (forM_, unless)
+import qualified Data.Aeson as Aeson
+import Control.Lens hiding ((<.>))
+import Data.Aeson.Lens
 import Data.Aeson.Types
 import Data.Bifunctor
 import Data.Yaml
 import Distribution.Package
 import Distribution.PackageDescription (FlagName, mkFlagName, unFlagName)
 import Distribution.Version
-import Network.HTTP.Client
-import Network.HTTP.Client.TLS
-import Network.HTTP.Types.Status
 import System.Environment (getArgs)
+import System.FilePath
 import Control.Exception (throw)
 import System.IO
 import System.IO.Temp
@@ -33,36 +34,41 @@ import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Distribution.Text as Cabal
 
 import Skylark
 
 main :: IO ()
 main = do
-    [resolver, out] <- getArgs
-    manager <- newManager tlsManagerSettings
-    let ltsUrl = case resolver of
-          'l' : 't' : 's' : _ ->
-            "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver ++ ".yaml"
-          _ ->
-            "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver ++ ".yaml"
-    ltsYaml <- downloadUrl manager ltsUrl
-    plan <- case decodeEither' $ L.toStrict ltsYaml of
+    [ltsYamlPath, allCabalHashesDir, out] <- getArgs
+
+    ltsYaml <- B.readFile ltsYamlPath
+    plan <- case decodeEither' ltsYaml of
         Left err -> throw err
         Right (x :: BuildPlan) -> pure x
     shas <- flip Map.traverseWithKey (planPackages plan) $ \n p -> do
-        let hackageUrl = "https://hackage.haskell.org/package/"
-                            ++ Cabal.display n ++ "-" ++ Cabal.display (planPackageVersion p)
-                            ++ ".tar.gz"
-        tar <- downloadUrl manager hackageUrl
-        putStrLn (Cabal.display n)
-        return $! SHA256.hashlazy tar
+        cabalPackageSHA256 allCabalHashesDir n p
     writeFile out $ show $
-        "# Generated from resolver:" <+> text resolver
+        "# Generated from Stackage.hs with sha256:" <+>
+        -- why is this base16 encoded?
+          text (BC.unpack $ Base16.encode (SHA256.hash ltsYaml))
         $$ renderStatements
           [ Assign "core_packages" $ expr $ corePackageList plan
           , Assign "packages" $ expr $ packageList shas plan
           ]
+
+cabalPackageSHA256 :: FilePath -> PackageName -> PlanPackage -> IO B.ByteString
+cabalPackageSHA256 allCabalHashesDir n p  = do
+    let
+      jsonPath = allCabalHashesDir </>
+        Cabal.display n </>
+        Cabal.display (planPackageVersion p) </>
+        Cabal.display n <.> "json"
+    package <- L.readFile jsonPath
+    case T.encodeUtf8 <$> package ^? key "package-hashes" . key "SHA256" . _String of
+      Just x -> pure x
+      Nothing -> error $ "can't find hash in " ++ show package
 
 packageList :: Map.Map PackageName B.ByteString -> BuildPlan -> [(String, Expr)]
 packageList shas = map mk . Map.toList . planPackages
@@ -87,17 +93,6 @@ corePackageList = map mk . Map.toList . corePackageVersions
 flagsExpr :: Flags -> Expr
 flagsExpr m = ExprDict $
   bimap (ExprString . unFlagName) ExprBool <$> Map.toList m
-
-downloadUrl :: Manager -> String -> IO L.ByteString
-downloadUrl manager url = do
-    req <- parseRequest url
-    resp <- httpLbs req manager
-    let status = responseStatus resp
-    unless (statusIsSuccessful status)
-        $ error $ "Unable to download " ++ show url
-                ++ "\nStatus: " ++ show (statusCode status)
-                ++ " " ++ BC.unpack (statusMessage status)
-    return $ responseBody resp
 
 --------------------------------------------------------------------------------
 -- JSON data types and instances for parsing the LTS yaml file

@@ -10,11 +10,27 @@ http_archive(
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/cd2ed70.tar.gz"],
 )
 
+http_file(
+    name = "stackage_lts",
+    urls = ["https://raw.githubusercontent.com/fpco/lts-haskell/master/lts-12.4.yaml"]
+)
+
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_git_repository", "nixpkgs_package")
 
 nixpkgs_git_repository(
     name = "nixpkgs",
     revision = "ee80654b5267b07ba10d62d143f211e0be81549e",
+)
+
+
+all_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])"""
+
+http_archive(
+    name = "all_cabal_hashes_repo",
+    urls = ["https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/1a28e3e846e51fb8df461f4fc7e64eff8ffad762"],
+    type = "tar.gz",
+    sha256 = "defd4984addf1abf4189fed6953fbff678f909b029125f9ae944eb8141124b31",
+    build_file_content = all_content,
 )
 
 load("//:cc_configure_custom.bzl", "cc_configure_custom")
@@ -52,8 +68,30 @@ haskell_repositories()
 nixpkgs_package(
     name = "ghc",
     repository = "@nixpkgs",
-    attribute_path = "haskell.packages.ghc822.ghc",
+    #attribute_path = "haskell.packages.ghc822.ghc",
     build_file = "@ai_formation_hazel//:BUILD.ghc",
+    nix_file_content = """
+  let pkgs = import <nixpkgs> {}; in
+  pkgs.haskellPackages.ghcWithPackages (p: with p;
+    [ base16-bytestring
+      cryptohash
+      http-types
+      http-client
+      http-client-tls
+      aeson
+      lens-aeson
+      bytestring
+      filepath
+      text
+      containers
+      temporary
+      process
+      pretty
+      Cabal
+      yaml
+    ]
+  )
+  """,
 )
 
 nixpkgs_package(
