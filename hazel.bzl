@@ -177,6 +177,53 @@ def hazel_library(name):
   """Returns the label of the haskell_library rule for the given package."""
   return "@haskell_{}//:{}".format(_fixup_package_name(name), name)
 
+def _hazel_cabal_package_url_impl(ctx):
+  ctx.download_and_extract(
+    url = ctx.attr.url,
+    stripPrefix = ctx.attr.strip_prefix,
+    sha256 = ctx.attr.sha256,
+    output = "",
+  )
+  symlink_and_invoke_hazel(
+    ctx,
+    ctx.attr.hazel_base_repo_name,
+    ctx.attr.package_flags,
+    ctx.attr.package_name + ".cabal",
+    "package.bzl"
+  )
+
+_hazel_cabal_package_url = repository_rule(
+  implementation = _hazel_cabal_package_url_impl,
+  attrs = {
+    "url": attr.string(mandatory=True),
+    "strip_prefix": attr.string(default=""),
+    "sha256": attr.string(default=""),
+    "package_name": attr.string(mandatory=True),
+    "package_version": attr.string(mandatory=True),
+    "package_flags": attr.string_dict(default={}),
+    "hazel_base_repo_name": attr.string(default="hazel_base_repository"),
+  },
+)
+
+def hazel_cabal_package_url(
+    package_name,
+    package_version,
+    url,
+    strip_prefix = "",
+    sha256 = "",
+    package_flags = {}):
+  """TODO"""
+  fixed_package_name = _fixup_package_name(package_name)
+  _hazel_cabal_package_url(
+    name = "haskell_{}".format(fixed_package_name),
+    package_name = package_name,
+    package_version = package_version,
+    url = url,
+    strip_prefix = strip_prefix,
+    sha256 = sha256,
+    package_flags = package_flags,
+  )
+
 def hazel_custom_package_hackage(
     package_name,
     version,
