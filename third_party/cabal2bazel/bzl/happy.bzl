@@ -35,5 +35,11 @@ def genhappy(src, out):
       srcs = [src],
       outs = [out],
       tools = ["@haskell_happy//:happy_bin"],
-      cmd = "$(location @haskell_happy//:happy_bin) -g -a -c -o $(OUTS) $(SRCS)",
+      cmd = """
+pwd
+ls -R bazel-out/host/bin/external || echo ""
+mkdir bazel-out/host/bin/external/haskell_mtl
+cp bazel-out/host/bin/external/haskell_happy/happy_bin.runfiles/__main__/external/haskell_mtl/libHSexternalZShaskellZUmtlZSmtl-ghc8.4.2.dylib bazel-out/host/bin/external/haskell_mtl/libHSexternalZShaskellZUmtlZSmtl-ghc8.4.2.dylib.temp
+$(location @haskell_happy//:happy_bin) -g -a -c -o $(OUTS) $(SRCS)
+""",
   )
