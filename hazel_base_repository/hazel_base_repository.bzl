@@ -1,5 +1,8 @@
+load("//tools:ghc.bzl", "get_ghc_workspace", "get_ghc_executable")
+
 def _hazel_base_repository_impl(ctx):
-  ctx.symlink(ctx.attr.ghc, "ghc")
+  ghc_workspace = get_ghc_workspace(ctx.attr.ghc_workspaces, ctx.os)
+  ghc = ctx.path(Label(get_ghc_executable(ghc_workspace, ctx.os)))
 
   cabal2bazel_srcs = [
       "@ai_formation_hazel//hazel_base_repository:cabal2bazel.hs",
@@ -13,7 +16,7 @@ def _hazel_base_repository_impl(ctx):
     ctx.symlink(Label(f), l.name)
 
   res = ctx.execute([
-            "./ghc",
+            ghc,
             "-Wall",
             "-Werror",
             # Only use core packages of GHC, nothing from the the user level:
@@ -26,7 +29,7 @@ def _hazel_base_repository_impl(ctx):
   if res.return_code != 0:
     fail("Couldn't build cabal2bazel:\n{}\n{}".format(res.stdout,res.stderr))
 
-  res = ctx.execute(["./ghc", "--numeric-version"])
+  res = ctx.execute([ghc, "--numeric-version"])
   if res.return_code != 0:
     fail("Couldn't get GHC version:\n{}\n{}".format(res.stdout,res.stderr))
 
@@ -53,7 +56,7 @@ extra_libs_strip_include_prefix = {}
 hazel_base_repository = repository_rule(
     implementation=_hazel_base_repository_impl,
     attrs={
-        "ghc": attr.label(mandatory=True),
+        "ghc_workspaces": attr.string_dict(mandatory=True),
         "extra_libs": attr.string_dict(mandatory=True),
         "extra_libs_hdrs": attr.string_dict(mandatory=True),
         "extra_libs_strip_include_prefix": attr.string_dict(mandatory=True),
