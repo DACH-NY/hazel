@@ -30,3 +30,8 @@ haskell_library(
     "@haskell_vector//:vector",
   ],
 )
+
+cc_import(
+    name = "conduit-cbits",
+    visibility = ["//visibility:public"],
+)
