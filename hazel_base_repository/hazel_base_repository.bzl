@@ -64,7 +64,11 @@ hazel_base_repository = repository_rule(
 
 # TODO: don't reload all package names into every repository.
 def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_flags, cabal_path, output):
-  for f in ["cabal2bazel", "ghc-version"]:
+  if ctx.os.name == "windows 10":
+    cabal2bazel = "cabal2bazel.exe"
+  else:
+    cabal2bazel = "cabal2bazel"
+  for f in [cabal2bazel, "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
   ghc_version = ctx.execute(["cat", "ghc-version"]).stdout
@@ -78,7 +82,7 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
       flag_args += ["-flag-off", flag]
 
   res = ctx.execute([
-    "./cabal2bazel",
+    "./" + cabal2bazel,
     ghc_version,
     cabal_path,
     "package.bzl"
