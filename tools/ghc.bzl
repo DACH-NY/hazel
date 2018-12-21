@@ -1,7 +1,7 @@
 default_ghc_workspaces = {
   "linux": "@ghc",
   "mac os x": "@ghc",
-  "windows": "@ghc-windows",
+  "windows 10": "@ghc_windows",
 }
 
 def get_ghc_workspace(ghc_workspaces, os):
@@ -14,7 +14,7 @@ def get_ghc_workspace(ghc_workspaces, os):
 
 def get_ghc_executable(ghc_workspace, os):
   """Return the GHC executable in the given workspace for the given OS."""
-  if os.name == "windows":
+  if os.name == "windows 10":
     ghc = "{}//:bin/ghc.exe".format(ghc_workspace)
   else:
     ghc = "{}//:bin/ghc".format(ghc_workspace)

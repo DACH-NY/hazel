@@ -127,7 +127,7 @@ def hazel_repositories(
     extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
       get include prefix to strip.
     ghc_workspaces: Dictionary mapping OS names to GHC workspaces.
-      Default: Linux/MacOS: "@ghc", Windows: "@ghc-windows".
+      Default: Linux/MacOS: "@ghc", Windows: "@ghc_windows".
   """
   hazel_base_repo_name = "hazel_base_repository"
 
