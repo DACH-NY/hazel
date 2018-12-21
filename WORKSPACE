@@ -156,6 +156,7 @@ register_toolchains(
 )
 
 load("//:hazel.bzl", "hazel_repositories",
+     "hazel_cabal_package_url",
      "hazel_custom_package_hackage",
      "hazel_custom_package_github",
 )
@@ -196,6 +197,22 @@ hazel_custom_package_github(
   github_repo = "wai",
   strip_prefix = "wai-app-static",
   repo_sha = "aaa0dca56231c060372004cda46d719ec6cc3ec5",
+)
+
+hazel_cabal_package_url(
+  package_name = "proj-a",
+  package_version = "0.1.0.0",
+  url = "https://github.com/aherrmann/demo-cabal-header-forwarding/releases/download/v0.1.0.0/proj-a-0.1.0.0.tar.gz",
+  strip_prefix = "proj-a-0.1.0.0",
+  sha256 = "887fbae35330834a7e311ca56f20924dea872690b1c498b585053238c1deb634",
+)
+
+hazel_cabal_package_url(
+  package_name = "proj-b",
+  package_version = "0.1.0.0",
+  url = "https://github.com/aherrmann/demo-cabal-header-forwarding/releases/download/v0.1.0.0/proj-b-0.1.0.0.tar.gz",
+  strip_prefix = "proj-b-0.1.0.0",
+  sha256 = "c987906adc23e61181d4a6fcf2ca247991cc9844f0a6de5856c58292b84fc679",
 )
 
 load("//:packages.bzl", "packages", "core_packages")
