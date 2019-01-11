@@ -36,7 +36,7 @@ cc_configure_custom(
     ld = "@binutils//:bin/ld",
 )
 
-RULES_HASKELL_SHA = "8bc2b2c847c54f3d9f6bd5000f8deefa1cf4c995"
+RULES_HASKELL_SHA = "d5203b8273fa53d68341e8bf0dc7cb8f14ebbf6c"
 
 http_archive(
     name = "io_tweag_rules_haskell",
