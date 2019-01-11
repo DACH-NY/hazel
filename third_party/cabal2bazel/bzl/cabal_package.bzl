@@ -392,6 +392,7 @@ def _get_build_attrs(
                   "-w",
                  ]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
+      linkstatic = True,
       textual_hdrs = list(headers),
       deps = ["{}//:threaded-rts".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
       visibility = ["//visibility:public"],
@@ -531,7 +532,6 @@ def cabal_haskell_package(
         name = exe_name,
         srcs = select(srcs),
         deps = select(deps),
-        linkstatic = False,
         visibility = ["//visibility:public"],
         **attrs
     )
