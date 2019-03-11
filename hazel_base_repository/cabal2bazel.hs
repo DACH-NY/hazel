@@ -20,6 +20,7 @@ import Distribution.PackageDescription.Parse
     (readGenericPackageDescription, parseHookedBuildInfo, ParseResult(..))
 #endif
 
+import Data.Char (toUpper)
 import Distribution.Text (display, simpleParse)
 import Distribution.Verbosity (normal)
 import System.Environment (getArgs)
@@ -56,10 +57,14 @@ parseFlags = \case
 maybeConfigure :: P.PackageDescription -> IO P.PackageDescription
 maybeConfigure desc = whenConfiguring $ do
     cdir <- Directory.getCurrentDirectory
-    let cdAndRun = "pushd " <> cdir <> "; ./configure; popd"
+
+    let fixedPath = case cdir of
+          drive:':':path -> '/' : toUpper drive : map (\case { '\\' -> '/'; x -> x }) path
+          x -> x
+    let cdAndRun = "pushd " <> fixedPath <> "; ./configure; popd"
 
     -- Bypasses the shebang, which doesn't work on Windows
-    callProcess "bash" ["-lc", "-c", cdAndRun]
+    callProcess "bash" ["-lc", cdAndRun]
 
     let buildInfoFile = display (P.packageName desc) <.> "buildinfo"
     buildInfoExists <- Directory.doesFileExist buildInfoFile
