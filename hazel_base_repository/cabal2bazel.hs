@@ -55,9 +55,11 @@ parseFlags = \case
 
 maybeConfigure :: P.PackageDescription -> IO P.PackageDescription
 maybeConfigure desc = whenConfiguring $ do
+    cdir <- Directory.getCurrentDirectory
+    let cdAndRun = "pushd " <> cdir <> "; ./configure; popd"
 
     -- Bypasses the shebang, which doesn't work on Windows
-    callProcess "sh" ["./configure"]
+    callProcess "bash" ["-lc", "-c", cdAndRun]
 
     let buildInfoFile = display (P.packageName desc) <.> "buildinfo"
     buildInfoExists <- Directory.doesFileExist buildInfoFile
