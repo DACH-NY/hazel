@@ -20,6 +20,9 @@ import Distribution.PackageDescription.Parse
     (readGenericPackageDescription, parseHookedBuildInfo, ParseResult(..))
 #endif
 
+import Data.Maybe (fromMaybe)
+import Data.List (nub) -- I know...
+
 import Distribution.Text (display, simpleParse)
 import Distribution.Verbosity (normal)
 import System.Environment (getArgs)
@@ -44,8 +47,29 @@ main = do
                       Just v -> v
         packageFlags = parseFlags flagArgs
     desc <- maybeConfigure $ flattenToDefaultFlags ghcVersion packageFlags gdesc
+
+    let mlibHsSourceDirs = (P.hsSourceDirs . P.libBuildInfo) <$> P.library desc
+        libHsSourceDirs = fromMaybe [] mlibHsSourceDirs
+        exeHsSourceDirs = concatMap (P.hsSourceDirs . P.buildInfo) $ P.executables desc
+        allHsSourceDirs = nub $ libHsSourceDirs <> exeHsSourceDirs
+        newSourceDirs = (\i -> "d" <> show i) <$> ([1 .. ] :: [Int])
+        mappings = zip allHsSourceDirs newSourceDirs
+        updateBuildInfo binfo = binfo { P.hsSourceDirs =
+              map
+                (\dir -> fromMaybe (error "expected mapping") (lookup dir mappings))
+                (P.hsSourceDirs binfo)
+            }
+        updateLib lib = lib { P.libBuildInfo = updateBuildInfo $ P.libBuildInfo lib }
+        updateExe exe = exe { P.buildInfo = updateBuildInfo $ P.buildInfo exe }
+        desc' = desc
+          { P.library = updateLib <$> P.library desc
+          , P.executables = updateExe <$> P.executables desc
+          }
+
+    mapM_ (\(f,t) -> putStrLn (f <> ":" <> t)) mappings
+
     writeFile outFile $ show $ renderStatements
-        [Assign "package" $ packageDescriptionExpr desc]
+        [Assign "package" $ packageDescriptionExpr desc']
 
 parseFlags :: [String] -> Map.Map P.FlagName Bool
 parseFlags = \case

@@ -94,6 +94,14 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
         cabal_path, res.stdout, res.stderr))
   if res.stderr:
     print(res.stderr)
+
+  if res.stdout:
+    for line in res.stdout.splitlines():
+        print(line)
+
+        (f,t) = line.split(":")
+        ctx.symlink(f, t)
+
   ctx.file("BUILD", """
 load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "cabal_haskell_package",
