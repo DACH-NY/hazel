@@ -51,7 +51,7 @@ def case_insensitive_name(package_name):
 
   A hyphen is converted to two underscores.
 
-  A digits and lowercase characters and left as-is.
+  Digits and lowercase characters and left as-is.
 
   >>> case_insensitive_name("Cabal")
   'c_abal'
