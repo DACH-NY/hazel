@@ -20,8 +20,9 @@ import Distribution.PackageDescription.Parse
     (readGenericPackageDescription, parseHookedBuildInfo, ParseResult(..))
 #endif
 
-import Data.Maybe (fromMaybe)
+import Control.Monad (when)
 import Data.List (nub) -- I know...
+import Data.Maybe (fromMaybe)
 
 import Distribution.Text (display, simpleParse)
 import Distribution.Verbosity (normal)
@@ -40,7 +41,7 @@ import Skylark
 
 main :: IO ()
 main = do
-    ghcVersionStr:cabalFile:outFile:flagArgs <- getArgs
+    ghcVersionStr:cabalFile:outFile:shorten:flagArgs <- getArgs
     gdesc <- readGenericPackageDescription normal cabalFile
     let ghcVersion = case simpleParse ghcVersionStr of
                       Nothing -> error $ "Error parsing ghc version: " ++ show ghcVersionStr
@@ -48,7 +49,8 @@ main = do
         packageFlags = parseFlags flagArgs
     desc <- maybeConfigure $ flattenToDefaultFlags ghcVersion packageFlags gdesc
 
-    let mlibHsSourceDirs = (P.hsSourceDirs . P.libBuildInfo) <$> P.library desc
+    let doShorten = shorten == "do_shorten"
+        mlibHsSourceDirs = (P.hsSourceDirs . P.libBuildInfo) <$> P.library desc
         libHsSourceDirs = fromMaybe [] mlibHsSourceDirs
         exeHsSourceDirs = concatMap (P.hsSourceDirs . P.buildInfo) $ P.executables desc
         allHsSourceDirs = nub $ libHsSourceDirs <> exeHsSourceDirs
@@ -65,11 +67,13 @@ main = do
           { P.library = updateLib <$> P.library desc
           , P.executables = updateExe <$> P.executables desc
           }
+        desc'' = if doShorten then desc' else desc
 
-    mapM_ (\(f,t) -> putStrLn (f <> ":" <> t)) mappings
+    when doShorten $
+      mapM_ (\(f,t) -> putStrLn (f <> ":" <> t)) mappings
 
     writeFile outFile $ show $ renderStatements
-        [Assign "package" $ packageDescriptionExpr desc']
+        [Assign "package" $ packageDescriptionExpr desc'']
 
 parseFlags :: [String] -> Map.Map P.FlagName Bool
 parseFlags = \case

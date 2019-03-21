@@ -58,7 +58,7 @@ hazel_base_repository = repository_rule(
     })
 
 # TODO: don't reload all package names into every repository.
-def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_flags, cabal_path, output):
+def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_flags, cabal_path, output, shorten_source_dirs):
   cabal2bazel = get_executable_name("cabal2bazel", ctx)
   for f in [cabal2bazel, "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
@@ -82,12 +82,14 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
     elif package_flags[flag] == "False":
       flag_args += ["-flag-off", flag]
 
+  shorten_source_dirs_arg = ["do_shorten"] if shorten_source_dirs else ["dont_shorten"]
+
   res = ctx.execute([
     "./{}".format(cabal2bazel),
     ghc_version,
     cabal_path,
     "package.bzl"
-  ] + flag_args, quiet=False)
+  ] + shorten_source_dirs_arg + flag_args, quiet=False)
 
   if res.return_code != 0:
     fail("Error running hazel on {}:\n{}\n{}".format(
@@ -95,10 +97,8 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
   if res.stderr:
     print(res.stderr)
 
-  if res.stdout:
+  if shorten_source_dirs and res.stdout:
     for line in res.stdout.splitlines():
-        print(line)
-
         (f,t) = line.split(":")
         ctx.symlink(f, t)
 

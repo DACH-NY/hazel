@@ -22,7 +22,8 @@ def _cabal_haskell_repository_impl(ctx):
     ghc_workspace,
     ctx.attr.package_flags,
     ctx.attr.package_name + ".cabal",
-    "package.bzl"
+    "package.bzl",
+    ctx.attr.shorten_source_dirs,
   )
 
 _cabal_haskell_repository = repository_rule(
@@ -33,6 +34,7 @@ _cabal_haskell_repository = repository_rule(
         "hazel_base_repo_name": attr.string(mandatory=True),
         "download_options": attr.string_dict(mandatory=True),
         "ghc_workspaces": attr.string_dict(mandatory=True),
+        "shorten_source_dirs": attr.bool(mandatory=True),
     })
 
 def _core_library_repository_impl(ctx):
@@ -95,7 +97,9 @@ def hazel_repositories(
   extra_flags={},
   extra_libs={},
   exclude_packages=[],
-  ghc_workspaces=default_ghc_workspaces):
+  ghc_workspaces=default_ghc_workspaces,
+  shorten_source_dirs_for=[],
+  ):
   """Generates external dependencies for a set of Haskell packages.
 
   This macro should be invoked in the WORKSPACE.  It generates a set of
@@ -208,6 +212,7 @@ def hazel_repositories(
         hazel_base_repo_name = hazel_base_repo_name,
         download_options = download_options,
         ghc_workspaces = ghc_workspaces,
+        shorten_source_dirs = p in shorten_source_dirs_for,
     )
 
   for p in core_packages:
